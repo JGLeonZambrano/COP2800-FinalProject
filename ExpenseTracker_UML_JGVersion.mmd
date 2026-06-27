@@ -1,0 +1,121 @@
+%% *****
+%% Daily Student Expense Tracker with Spending Score
+%% UML Class Diagram — Mermaid (.mmd) Version
+%% Lead Developer: Jose G. Leon Zambrano
+%% Phase 2 – Design
+%% *****
+%%
+%% NOTE ON THIS FILE:
+%% This is the Mermaid Live (.mmd) rendering of the UML Class Diagram
+%% originally written as pseudocode-style plaintext in the Phase 2 Word document.
+%% The two versions represent the same architecture. Differences are noted below.
+%%
+%% DIFFERENCES FROM THE WORD DOCUMENT VERSION:
+%%
+%% 1. Generic types: Mermaid does not support ArrayList<Transaction> syntax.
+%%    Angle brackets cause a syntax error in the renderer.
+%%    All ArrayList<Transaction> references are written as ArrayList in this file.
+%%    The Word document version uses the full Java generic type notation.
+%%
+%% 2. Constructor notation: Mermaid does not distinguish constructors from methods.
+%%    SpendingScore(double balance, double totalIncome) and
+%%    FileManager(String fileName) appear as regular methods in this diagram.
+%%    In the actual Java implementation they are constructors.
+%%
+%% 3. Comments: Mermaid uses %% for single-line comments.
+%%    The Word document pseudocode uses // following Java convention.
+%%
+%% 4. Private validation methods: isOptionValid, isValueValid, isMemoValid,
+%%    and isDateValid are shown here with a minus sign (-) prefix indicating
+%%    private access. Mermaid renders - as private and + as public correctly.
+%%
+%% 5. The "extends JFrame" relationship for ExpenseTrackerApp is noted
+%%    in the Word document but cannot be shown here because JFrame is a
+%%    Java standard library class, not a class defined in this project.
+%%    Adding it to the diagram would require defining a JFrame class block,
+%%    which would be misleading. It is documented here as a comment instead.
+%%
+%% ExpenseTrackerApp extends JFrame (javax.swing) — not shown in diagram.
+%% *****
+
+classDiagram
+
+    class ExpenseTrackerApp {
+        -ExpenseTracker transactionLedger
+        -Scanner scanner
+        -CardLayout cardLayout
+        -JPanel mainPanel
+        +main(String[] args) void
+        +start() void
+        +displayMenu() void
+        +handleUserChoice(int choice) void
+        +displayDailyReminder() void
+        -isOptionValid(String inputText, int[] validOptions) boolean
+        -isValueValid(String inputText) double
+        -isMemoValid(String inputText) boolean
+        -isDateValid(String inputText) boolean
+    }
+
+    class ExpenseTracker {
+        -double balance
+        -double totalIncome
+        -double totalExpenses
+        -ArrayList transactionLedger
+        +addIncome(double amount, String memo, String date, String category) void
+        +addExpense(double amount, String memo, String date, String category) void
+        +isDuplicateEntry(double amount, String memo, String date, String category) boolean
+        +getLedgerSortedByDate() ArrayList
+        +hasChildcareEntry() boolean
+        +getBalance() double
+        +getTotalIncome() double
+        +getTotalExpenses() double
+        +getTransactionLedger() ArrayList
+        +getAverageTransaction() double
+        +getMinimumTransaction() double
+        +getMaximumTransaction() double
+        +calculateSpendingScore() String
+    }
+
+    class Transaction {
+        -int id
+        -double amount
+        -String type
+        -String memo
+        -String date
+        -String category
+        +Transaction(int id, double amount, String type, String memo, String date, String category)
+        +getId() int
+        +getAmount() double
+        +getType() String
+        +getMemo() String
+        +getDate() String
+        +getCategory() String
+    }
+
+    class SpendingScore {
+        -int score
+        -String status
+        -double remainingPercentage
+        +SpendingScore(double balance, double totalIncome)
+        +calculateScore() String
+        +getStatus() String
+        +getRemainingPercentage() double
+    }
+
+    class FileManager {
+        -String filename
+        +FileManager(String fileName)
+        +saveLedger(ArrayList transactionLedger) void
+        +loadLedger() ArrayList
+    }
+
+    %% Relationships
+    %% --> solid arrow: uses / association
+    %% o-- composition: ExpenseTracker owns Transaction objects (1 to 0..*)
+    %% ..> dashed arrow: dependency (uses but does not own)
+
+    ExpenseTrackerApp --> ExpenseTracker : uses
+    ExpenseTracker o-- Transaction : contains
+    ExpenseTracker ..> SpendingScore : depends on
+    ExpenseTracker ..> FileManager : depends on
+    FileManager ..> Transaction : reads/writes
