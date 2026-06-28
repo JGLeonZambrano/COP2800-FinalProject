@@ -3,6 +3,7 @@
 %% UML Class Diagram — Mermaid (.mmd) Version
 %% Lead Developer: Jose G. Leon Zambrano
 %% Phase 2 – Design
+%% Last updated: June 28, 2026
 %% *****
 %%
 %% NOTE ON THIS FILE:
@@ -18,7 +19,7 @@
 %%    The Word document version uses the full Java generic type notation.
 %%
 %% 2. Constructor notation: Mermaid does not distinguish constructors from methods.
-%%    SpendingScore(double balance, double totalIncome) and
+%%    SpendingScore(double balance, double totalIncome, ArrayList transactionLedger) and
 %%    FileManager(String fileName) appear as regular methods in this diagram.
 %%    In the actual Java implementation they are constructors.
 %%
@@ -36,6 +37,16 @@
 %%    which would be misleading. It is documented here as a comment instead.
 %%
 %% ExpenseTrackerApp extends JFrame (javax.swing) — not shown in diagram.
+%%
+%% CHANGES FROM ORIGINAL VERSION (June 28, 2026):
+%%
+%% - ExpenseTrackerApp: added username and currentDate attributes
+%% - ExpenseTracker: getAverageTransaction, getMinimumTransaction, getMaximumTransaction
+%%   renamed to getAverageExpense, getMinimumExpense, getMaximumExpense (expenses only)
+%% - SpendingScore: constructor now takes transactionLedger as third parameter
+%%   to support composite scoring (balance health 60%, distribution 30%, anomaly 10%)
+%% - displayDailyReminder() removed from ExpenseTrackerApp — Daily Reminder
+%%   is now a Settings checkbox, not a standalone panel
 %% *****
 
 classDiagram
@@ -45,11 +56,12 @@ classDiagram
         -Scanner scanner
         -CardLayout cardLayout
         -JPanel mainPanel
+        -String username
+        -LocalDate currentDate
         +main(String[] args) void
         +start() void
         +displayMenu() void
         +handleUserChoice(int choice) void
-        +displayDailyReminder() void
         -isOptionValid(String inputText, int[] validOptions) boolean
         -isValueValid(String inputText) double
         -isMemoValid(String inputText) boolean
@@ -70,9 +82,9 @@ classDiagram
         +getTotalIncome() double
         +getTotalExpenses() double
         +getTransactionLedger() ArrayList
-        +getAverageTransaction() double
-        +getMinimumTransaction() double
-        +getMaximumTransaction() double
+        +getAverageExpense() double
+        +getMinimumExpense() double
+        +getMaximumExpense() double
         +calculateSpendingScore() String
     }
 
@@ -96,8 +108,9 @@ classDiagram
         -int score
         -String status
         -double remainingPercentage
-        +SpendingScore(double balance, double totalIncome)
+        +SpendingScore(double balance, double totalIncome, ArrayList transactionLedger)
         +calculateScore() String
+        +getAverageExpense() double
         +getStatus() String
         +getRemainingPercentage() double
     }
