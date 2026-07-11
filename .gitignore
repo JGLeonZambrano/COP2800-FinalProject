@@ -1,1 +1,4 @@
-.idea/
+.idea
+out
+transactions.csv
+TransactionLedger_*.csv

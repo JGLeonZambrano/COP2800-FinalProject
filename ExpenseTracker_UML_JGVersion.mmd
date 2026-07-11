@@ -2,14 +2,14 @@
 %% Daily Student Expense Tracker with Spending Score
 %% UML Class Diagram — Mermaid (.mmd) Version
 %% Lead Developer: Jose G. Leon Zambrano
-%% Phase 2 – Design
-%% Last updated: June 28, 2026
+%% Phase 3 – Implementation (updated from Phase 2 Design)
+%% Last updated: July 10, 2026
 %% *****
 %%
 %% NOTE ON THIS FILE:
 %% This is the Mermaid Live (.mmd) rendering of the UML Class Diagram
-%% originally written as pseudocode-style plaintext in the Phase 2 Word document.
-%% The two versions represent the same architecture. Differences are noted below.
+%% originally written as pseudocode-style plaintext in the Phase 2 Word document
+%% and now updated to reflect the Phase 3 implementation.
 %%
 %% DIFFERENCES FROM THE WORD DOCUMENT VERSION:
 %%
@@ -19,8 +19,7 @@
 %%    The Word document version uses the full Java generic type notation.
 %%
 %% 2. Constructor notation: Mermaid does not distinguish constructors from methods.
-%%    SpendingScore(double balance, double totalIncome, ArrayList transactionLedger) and
-%%    FileManager(String fileName) appear as regular methods in this diagram.
+%%    Constructors appear as regular methods in this diagram.
 %%    In the actual Java implementation they are constructors.
 %%
 %% 3. Comments: Mermaid uses %% for single-line comments.
@@ -38,30 +37,40 @@
 %%
 %% ExpenseTrackerApp extends JFrame (javax.swing) — not shown in diagram.
 %%
-%% CHANGES FROM ORIGINAL VERSION (June 28, 2026):
+%% CHANGES IN PHASE 3 IMPLEMENTATION (July 10, 2026):
 %%
-%% - ExpenseTrackerApp: added username and currentDate attributes
-%% - ExpenseTracker: getAverageTransaction, getMinimumTransaction, getMaximumTransaction
-%%   renamed to getAverageExpense, getMinimumExpense, getMaximumExpense (expenses only)
-%% - SpendingScore: constructor now takes transactionLedger as third parameter
-%%   to support composite scoring (balance health 60%, distribution 30%, anomaly 10%)
-%% - displayDailyReminder() removed from ExpenseTrackerApp — Daily Reminder
-%%   is now a Settings checkbox, not a standalone panel
+%% - ExpenseTrackerApp: dropped Scanner attribute (Swing app never needs it);
+%%   added FileManager attribute (previously implicit via ExpenseTracker);
+%%   password moved from a fixed constant to a mutable field for Change Password;
+%%   added helper openResourceLink for clickable MDC resource buttons
+%% - ExpenseTracker: calculateSpendingScore now returns SpendingScore
+%%   (previously String) so the GUI can access status, remaining percentage,
+%%   and the flagged anomaly transaction from a single call;
+%%   added loadFromLedger for startup recalculation and Clear All Transactions
+%% - SpendingScore: added unexpectedTransaction attribute and
+%%   getUnexpectedTransaction getter, so the Statistics panel can display
+%%   which transaction triggered the anomaly flag without re-running the math
+%% - FileManager: added saveLedgerToFile for dated export filenames
+%%   (TransactionLedger_{username}_{MM-DD-YYYY}.csv), so exports never
+%%   overwrite each other or overwrite the persistence file transactions.csv
 %% *****
 
 classDiagram
 
     class ExpenseTrackerApp {
         -ExpenseTracker transactionLedger
-        -Scanner scanner
+        -FileManager fileManager
         -CardLayout cardLayout
         -JPanel mainPanel
         -String username
         -LocalDate currentDate
+        -String storedPassword
+        -boolean dailyReminderEnabled
         +main(String[] args) void
         +start() void
         +displayMenu() void
         +handleUserChoice(int choice) void
+        -openResourceLink(String url) void
         -isOptionValid(String inputText, int[] validOptions) boolean
         -isValueValid(String inputText) double
         -isMemoValid(String inputText) boolean
@@ -85,7 +94,8 @@ classDiagram
         +getAverageExpense() double
         +getMinimumExpense() double
         +getMaximumExpense() double
-        +calculateSpendingScore() String
+        +calculateSpendingScore() SpendingScore
+        +loadFromLedger(ArrayList loadedLedger) void
     }
 
     class Transaction {
@@ -108,17 +118,20 @@ classDiagram
         -int score
         -String status
         -double remainingPercentage
+        -Transaction unexpectedTransaction
         +SpendingScore(double balance, double totalIncome, ArrayList transactionLedger)
         +calculateScore() String
-        +getAverageExpense() double
+        +getAverageExpense(ArrayList transactionLedger) double
         +getStatus() String
         +getRemainingPercentage() double
+        +getUnexpectedTransaction() Transaction
     }
 
     class FileManager {
         -String filename
         +FileManager(String fileName)
         +saveLedger(ArrayList transactionLedger) void
+        +saveLedgerToFile(ArrayList transactionLedger, String targetFilename) void
         +loadLedger() ArrayList
     }
 
@@ -128,7 +141,8 @@ classDiagram
     %% ..> dashed arrow: dependency (uses but does not own)
 
     ExpenseTrackerApp --> ExpenseTracker : uses
+    ExpenseTrackerApp --> FileManager : uses
     ExpenseTracker o-- Transaction : contains
     ExpenseTracker ..> SpendingScore : depends on
-    ExpenseTracker ..> FileManager : depends on
+    SpendingScore ..> Transaction : reads
     FileManager ..> Transaction : reads/writes
