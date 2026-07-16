@@ -2,3 +2,4 @@
 out
 transactions.csv
 TransactionLedger_*.csv
+settings.txt

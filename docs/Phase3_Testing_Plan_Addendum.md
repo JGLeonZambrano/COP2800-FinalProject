@@ -73,13 +73,13 @@ Expected: Error dialog about mismatch
 Actual:
 Status:
 
-### Test B-10: Password reset on relaunch
-Input: After changing the password successfully in Test B-6, exit the
-app fully and relaunch
-Expected: The NEW password no longer works. The DEFAULT password
-(`password123` or whatever is hardcoded) works instead
-Actual:
-Status:
+### Test B-10: Password persists across relaunch (UPDATED after settings.txt fix)
+Input: Change the password successfully, exit the app fully, relaunch.
+Expected: The NEW password works on relaunch. The old default (`password123`)
+does NOT work. (This inverts the original B-10, which predated the
+settings.txt persistence fix — the password now persists by design.)
+Actual: Verified when the persistence change was implemented.
+Status: PASS
 
 ---
 

@@ -2,7 +2,7 @@
 // Daily Student Expense Tracker with Spending Score
 // COP2800 Java Programming (Final Team Project, Phase 3)
 // Lead Developer: Jose G. Leon Zambrano
-// Team: Manuel Salazar, Diego Cabrera, Adam Cadeoy, Julien Hernandez
+// Team: Manuel Salazar, Diego Cabrera, Julien Morales
 //
 // FILE STRUCTURE: this single file contains all five classes of the project:
 //	1. ExpenseTrackerApp: (public: entry point, GUI window, panel routing, validation)
@@ -59,13 +59,12 @@ public class ExpenseTrackerApp extends JFrame {
 
 	// Authentication credentials. The username is fixed; the password starts at the default below but can be changed in
 	// Settings during the session.
-	// TODO (Jose): the changed password is NOT persistent: it resets to the default on every relaunch
-	//  because persisting it would require a settings file. Confirm w team that session-only password change is
-	//  acceptable for this assignment
 	private static final String STORED_USERNAME = "student";
-	private static String storedPassword = "password123";
+	// Not static: loadSettings() writes the saved password into this instance field on
+	// startup, so a changed password persists across sessions instead of resetting.
+	private String storedPassword = "password123";
 
-	// Daily reminder setting. Resets to enabled on each launch (session-only).
+	// Daily reminder setting. Persisted to settings.txt, so the toggle survives relaunch
 	private boolean dailyReminderEnabled = true;
 
 	// Category options for the Add Transaction dropdowns.
@@ -129,7 +128,10 @@ public class ExpenseTrackerApp extends JFrame {
 
 		add(mainPanel);
 
-		// Load saved data from the CSV file and recalculate all running totals.
+		// Load saved settings (password, daily reminder) before showing the login screen
+		loadSettings();
+
+		// Load saved data from the CSV file and recalculate all running totals
 		ArrayList<Transaction> loadedLedger = fileManager.loadLedger();
 		if (!loadedLedger.isEmpty()) {
 			transactionLedger.loadFromLedger(loadedLedger);
@@ -947,6 +949,9 @@ public class ExpenseTrackerApp extends JFrame {
 		settingsPanel.add(dailyReminderCheckbox, gridConstraints);
 		dailyReminderCheckbox.addActionListener(event -> {
 			dailyReminderEnabled = dailyReminderCheckbox.isSelected();
+			// Persist immediately so the toggle survives relaunch
+			// (fixes Julien Test 9, where turning the reminder off still showed it on the next startup)
+			saveSettings();
 		});
 
 		// Change password: asks for the current password, the new one, and a confirmation, all in one dialog.
@@ -990,9 +995,11 @@ public class ExpenseTrackerApp extends JFrame {
 							JOptionPane.ERROR_MESSAGE);
 				} else {
 					storedPassword = enteredNewPassword;
+					// Persist immediately so the new password works on the next relaunch, instead of reverting to the
+					// default (the original session-only limitation)
+					saveSettings();
 					JOptionPane.showMessageDialog(this,
-							"Password changed successfully.\n"
-									+ "Note: the password resets to the default on the next launch.",
+							"Password changed successfully.",
 							"Change Password", JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
@@ -1034,6 +1041,57 @@ public class ExpenseTrackerApp extends JFrame {
 			JOptionPane.showMessageDialog(this,
 					"Could not open the browser automatically.\nPlease visit: " + url,
 					"Link", JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
+
+	// Loads the saved password and daily-reminder setting from settings.txt, if it exists.
+	// Called once on startup. Format is one key=value pair per line. This is what makes a changed password and the
+	// reminder toggle persist across sessions, fixing the bug where both reset every launch
+	// (found in team testing: Julien Test 9, and the password TODO).
+	private void loadSettings() {
+		try {
+			java.io.BufferedReader settingsReader =
+					new java.io.BufferedReader(new java.io.FileReader("settings.txt"));
+			String settingsLine = settingsReader.readLine();
+			while (settingsLine != null) {
+				int equalsPosition = settingsLine.indexOf('=');
+				if (equalsPosition > 0) {
+					String settingKey = settingsLine.substring(0, equalsPosition);
+					String settingValue = settingsLine.substring(equalsPosition + 1);
+					if (settingKey.equals("password")) {
+						storedPassword = settingValue;
+					} else if (settingKey.equals("dailyReminderEnabled")) {
+						dailyReminderEnabled = settingValue.equals("true");
+					}
+				}
+				settingsLine = settingsReader.readLine();
+			}
+			settingsReader.close();
+		} catch (java.io.FileNotFoundException fileNotFoundException) {
+			// No settings file yet: keep the built-in defaults. Normal on first launch.
+		} catch (Exception generalException) {
+			// General backup catchall: a corrupt settings file falls back to defaults rather than crashing the
+			// application on startup.
+		}
+	}
+
+	// Writes the current password and daily-reminder setting to settings.txt. Called whenever either setting changes,
+	// so the change survives the next relaunch.
+	private void saveSettings() {
+		try {
+			java.io.BufferedWriter settingsWriter =
+					new java.io.BufferedWriter(new java.io.FileWriter("settings.txt"));
+			settingsWriter.write("password=" + storedPassword);
+			settingsWriter.newLine();
+			settingsWriter.write("dailyReminderEnabled=" + dailyReminderEnabled);
+			settingsWriter.newLine();
+			settingsWriter.close();
+		} catch (Exception generalException) {
+			// General backup catchall: if settings cannot be saved, the app still runs; the setting simply will
+			// not persist to the next session.
+			JOptionPane.showMessageDialog(this,
+					"Could not save settings. Your change applies to this session only.",
+					"Settings", JOptionPane.WARNING_MESSAGE);
 		}
 	}
 
